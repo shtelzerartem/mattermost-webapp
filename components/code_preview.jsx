@@ -1,7 +1,6 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import $ from 'jquery';
 import PropTypes from 'prop-types';
 import React from 'react';
 
@@ -61,17 +60,25 @@ export default class CodePreview extends React.PureComponent {
         if (!this.state.lang || this.props.fileInfo.size > Constants.CODE_PREVIEW_MAX_FILE_SIZE) {
             return;
         }
-        $.ajax({ // eslint-disable-line jquery/no-ajax
-            async: true,
-            url: this.props.fileUrl,
-            type: 'GET',
-            dataType: 'text',
-            error: this.handleReceivedError,
-            success: this.handleReceivedCode,
-        });
+        
+        var xhr = new XMLHttpRequest();
+        xhr.open("GET", this.props.fileUrl, true);
+        xhr.onload = function (e) {
+            if (xhr.readyState == 4) {
+                if (xhr.status == 200) this.handleReceivedCode(xhr.response);
+                else this.handleReceivedError();
+            }
+        }.bind(this);
+
+        xhr.onerror = function (e) {
+            this.handleReceivedError();
+        }.bind(this)
+        
+        xhr.send(null);
     }
 
     handleReceivedCode = (data) => {
+        console.log(data);
         let code = data;
         if (data.nodeName === '#document') {
             code = new XMLSerializer().serializeToString(data);
@@ -84,7 +91,7 @@ export default class CodePreview extends React.PureComponent {
     }
 
     handleReceivedError = () => {
-        this.setState({loading: false, success: false});
+        this.setState({ loading: false, success: false });
     }
 
     static supports(fileInfo) {
@@ -95,7 +102,7 @@ export default class CodePreview extends React.PureComponent {
         if (this.state.loading) {
             return (
                 <div className='view-image__loading'>
-                    <LoadingSpinner/>
+                    <LoadingSpinner />
                 </div>
             );
         }
@@ -122,7 +129,7 @@ export default class CodePreview extends React.PureComponent {
                     <div className='post-code__line-numbers'>
                         {SyntaxHighlighting.renderLineNumbers(this.state.code)}
                     </div>
-                    <code dangerouslySetInnerHTML={{__html: highlighted}}/>
+                    <code dangerouslySetInnerHTML={{ __html: highlighted }} />
                 </div>
             </div>
         );

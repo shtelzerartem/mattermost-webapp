@@ -2,10 +2,8 @@
 // See LICENSE.txt for license information.
 /* eslint-disable react/no-string-refs */
 
-import $ from 'jquery';
 import PropTypes from 'prop-types';
 import React from 'react';
-import ReactDOM from 'react-dom';
 
 import Constants from 'utils/constants';
 import * as Utils from 'utils/utils.jsx';
@@ -32,34 +30,27 @@ export default class AudioVideoPreview extends React.PureComponent {
         this.state = {
             canPlay: true,
         };
+
+        this.videoRef = React.createRef();
     }
 
     componentDidMount() {
         this.handleFileInfoChanged(this.props.fileInfo);
-
-        if (this.refs.source) {
-            $(ReactDOM.findDOMNode(this.refs.source)).one('error', this.handleLoadError);
-        }
     }
 
     componentDidUpdate(prevProps) {
         if (this.props.fileUrl !== prevProps.fileUrl) {
             this.handleFileInfoChanged(this.props.fileInfo);
         }
-
-        if (this.refs.source) {
-            $(ReactDOM.findDOMNode(this.refs.source)).one('error', this.handleLoadError);
-        }
     }
 
     handleFileInfoChanged = (fileInfo) => {
-        let video = ReactDOM.findDOMNode(this.refs.video);
+        const video = this.videoRef.current;
         if (!video) {
             video = document.createElement('video');
         }
 
         const canPlayType = video.canPlayType(fileInfo.mime_type);
-
         this.setState({
             canPlay: canPlayType === 'probably' || canPlayType === 'maybe',
         });
@@ -72,8 +63,8 @@ export default class AudioVideoPreview extends React.PureComponent {
     }
 
     stop = () => {
-        if (this.refs.video) {
-            const video = ReactDOM.findDOMNode(this.refs.video);
+        if (this.videoRef.current) {
+            const video = this.videoRef.current;
             video.pause();
             video.currentTime = 0;
         }
@@ -100,15 +91,16 @@ export default class AudioVideoPreview extends React.PureComponent {
         return (
             <video
                 key={this.props.fileInfo.id}
-                ref='video'
                 data-setup='{}'
                 controls='controls'
                 width={width}
                 height={height}
+                ref={this.videoRef}
+                onError={this.handleLoadError}
             >
                 <source
-                    ref='source'
                     src={this.props.fileUrl}
+                    onError={this.handleLoadError}
                 />
             </video>
         );
